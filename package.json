@@ -1,0 +1,16 @@
+{
+  "name": "ontix-smartcontract",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Louis Fernando",
+  "license": "ISC",
+  "description": "This is a Smart Contract for OnTix",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.24.0"
+  }
+}
