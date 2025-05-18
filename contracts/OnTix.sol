@@ -2,9 +2,11 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract NFTTicketing is ERC721URIStorage, Ownable {
+contract NFTTicketing is ERC721URIStorage, ERC721Holder, Ownable {
+
     // ========================= Constructor =============================
     constructor() ERC721("OnTix", "OTX") {}
 
@@ -80,6 +82,22 @@ contract NFTTicketing is ERC721URIStorage, Ownable {
         require(price <= events[eventId].resalePriceCap, "Exceeds price cap");
         _;
     }
+    modifier onlyValidEventTime(uint256 startTime, uint256 endTime) {
+        require(startTime < endTime, "Invalid event time");
+        _;
+    }
+    modifier onlyValidResaleWindow(uint256 resaleStart, uint256 resaleEnd) {
+        require(resaleStart < resaleEnd, "Invalid resale window");
+        _;
+    }
+    modifier onlyValidPriceCap(uint256 cap, uint256 price) {
+        require(cap >= price, "Cap must >= ticket price");
+        _;
+    }
+    modifier uriLengthMatches(uint256 expected, string[] memory uris) {
+        require(uris.length == expected, "TokenURIs must match maxTickets");
+        _;
+    }
     // ====================================================================
 
     // ============================= Functions ============================
@@ -92,12 +110,15 @@ contract NFTTicketing is ERC721URIStorage, Ownable {
         uint256 maxTickets,
         uint256 resaleStart,
         uint256 resaleEnd,
-        uint256 resalePriceCap
-    ) external {
-        require(startTime < endTime, "Invalid event time");
-        require(resaleStart < resaleEnd, "Invalid resale window");
-        require(resalePriceCap >= ticketPrice, "Cap must >= ticket price");
-
+        uint256 resalePriceCap,
+        string[] memory tokenURIs
+    )
+        external
+        onlyValidEventTime(startTime, endTime)
+        onlyValidResaleWindow(resaleStart, resaleEnd)
+        onlyValidPriceCap(resalePriceCap, ticketPrice)
+        uriLengthMatches(maxTickets, tokenURIs)
+    {
         events[nextEventId] = Event(
             name,
             location,
@@ -112,16 +133,20 @@ contract NFTTicketing is ERC721URIStorage, Ownable {
             0
         );
 
+        for (uint256 i = 0; i < maxTickets; i++) {
+            uint256 ticketId = nextTicketId;
+            _safeMint(address(this), ticketId);
+            _setTokenURI(ticketId, tokenURIs[i]);
+            ticketMetadata[ticketId] = TicketData(nextEventId, false, false);
+            nextTicketId++;
+        }
+
         emit EventCreated(nextEventId, msg.sender);
         nextEventId++;
     }
 
-    function buyTickets(
-        uint256 eventId,
-        string[] memory tokenURIs
-    ) external payable {
+    function buyTickets(uint256 eventId, uint256 quantity) external payable {
         Event storage evt = events[eventId];
-        uint256 quantity = tokenURIs.length;
         require(
             evt.ticketsSold + quantity <= evt.maxTickets,
             "Not enough tickets"
@@ -131,15 +156,24 @@ contract NFTTicketing is ERC721URIStorage, Ownable {
             "Incorrect ETH amount"
         );
 
-        for (uint256 i = 0; i < quantity; i++) {
-            uint256 ticketId = nextTicketId;
-            _safeMint(msg.sender, ticketId);
-            _setTokenURI(ticketId, tokenURIs[i]);
+        uint256 ticketsAssigned = 0;
 
-            ticketMetadata[ticketId] = TicketData(eventId, false, false);
-            emit TicketPurchased(ticketId, msg.sender);
-            nextTicketId++;
+        for (
+            uint256 ticketId = 0;
+            ticketId < nextTicketId && ticketsAssigned < quantity;
+            ticketId++
+        ) {
+            if (
+                ownerOf(ticketId) == address(this) &&
+                ticketMetadata[ticketId].eventId == eventId
+            ) {
+                _transfer(address(this), msg.sender, ticketId);
+                emit TicketPurchased(ticketId, msg.sender);
+                ticketsAssigned++;
+            }
         }
+
+        require(ticketsAssigned == quantity, "Not enough unclaimed tickets");
 
         evt.ticketsSold += quantity;
         eventProceeds[eventId] += msg.value;
@@ -230,4 +264,5 @@ contract NFTTicketing is ERC721URIStorage, Ownable {
         emit TicketValidated(ticketId);
     }
     // ====================================================================
+
 }
