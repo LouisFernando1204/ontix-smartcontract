@@ -9,7 +9,6 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
     
     // ========================= Constructor =============================
     constructor() ERC721("OnTix", "OTX") {}
-
     // ===================================================================
 
     // ======================== Global Variables =========================
