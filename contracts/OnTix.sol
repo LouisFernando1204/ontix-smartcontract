@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
-    
     // ========================= Constructor =============================
     constructor() ERC721("OnTix", "OTX") {}
     // ===================================================================
@@ -18,8 +17,6 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
 
     // ============================= Structs =============================
     struct Event {
-        string name;
-        string location;
         uint256 startTime;
         uint256 endTime;
         uint256 ticketPrice;
@@ -31,24 +28,28 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         uint256 ticketsSold;
     }
     struct TicketData {
-        uint256 eventId;
+        string eventId;
         bool isUsed;
         bool isResold;
     }
     // ====================================================================
 
     // ============================= Mappings =============================
-    mapping(uint256 => Event) public events;
+    mapping(string => Event) public events;
     mapping(uint256 => TicketData) public ticketMetadata;
     mapping(uint256 => uint256) public resalePrice;
     mapping(uint256 => address) public resaleSeller;
-    mapping(uint256 => uint256) public eventProceeds;
+    mapping(string => uint256) public eventProceeds;
     // ====================================================================
 
     // ============================= Events ===============================
-    event EventCreated(uint256 indexed eventId, address indexed creator);
+    event EventCreated(string indexed eventId, address indexed creator);
     event TicketPurchased(uint256 indexed ticketId, address indexed buyer);
-    event EventProceedsWithdrawn(uint256 indexed eventId, address indexed creator, uint256 amount);
+    event EventProceedsWithdrawn(
+        string indexed eventId,
+        address indexed creator,
+        uint256 amount
+    );
     event TicketListedForResale(uint256 indexed ticketId, uint256 price);
     event TicketResold(uint256 indexed ticketId, address from, address to);
     event TicketValidated(uint256 indexed ticketId);
@@ -61,7 +62,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         _;
     }
     modifier resaleTimeValid(uint256 ticketId) {
-        uint256 eventId = ticketMetadata[ticketId].eventId;
+        string memory eventId = ticketMetadata[ticketId].eventId;
         require(
             block.timestamp >= events[eventId].resaleStart &&
                 block.timestamp <= events[eventId].resaleEnd,
@@ -78,7 +79,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         _;
     }
     modifier withinPriceCap(uint256 ticketId, uint256 price) {
-        uint256 eventId = ticketMetadata[ticketId].eventId;
+        string memory eventId = ticketMetadata[ticketId].eventId;
         require(price <= events[eventId].resalePriceCap, "Exceeds price cap");
         _;
     }
@@ -102,8 +103,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
 
     // ============================= Functions ============================
     function createEvent(
-        string memory name,
-        string memory location,
+        string memory id,
         uint256 startTime,
         uint256 endTime,
         uint256 ticketPrice,
@@ -120,9 +120,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         uriLengthMatches(maxTickets, tokenURIs)
     {
         require(resaleEnd <= startTime, "Resale must end before event starts");
-        events[nextEventId] = Event(
-            name,
-            location,
+        events[id] = Event(
             startTime,
             endTime,
             ticketPrice,
@@ -138,15 +136,18 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
             uint256 ticketId = nextTicketId;
             _safeMint(address(this), ticketId);
             _setTokenURI(ticketId, tokenURIs[i]);
-            ticketMetadata[ticketId] = TicketData(nextEventId, false, false);
+            ticketMetadata[ticketId] = TicketData(id, false, false);
             nextTicketId++;
         }
 
-        emit EventCreated(nextEventId, msg.sender);
+        emit EventCreated(id, msg.sender);
         nextEventId++;
     }
 
-    function buyTickets(uint256 eventId, uint256 quantity) external payable {
+    function buyTickets(
+        string memory eventId,
+        uint256 quantity
+    ) external payable {
         Event storage evt = events[eventId];
         require(block.timestamp <= evt.resaleEnd, "Ticket sales period ended");
         require(
@@ -167,7 +168,8 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         ) {
             if (
                 ownerOf(ticketId) == address(this) &&
-                ticketMetadata[ticketId].eventId == eventId
+                keccak256(abi.encodePacked(ticketMetadata[ticketId].eventId)) ==
+                keccak256(abi.encodePacked((eventId)))
             ) {
                 _transfer(address(this), msg.sender, ticketId);
                 emit TicketPurchased(ticketId, msg.sender);
@@ -181,7 +183,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         eventProceeds[eventId] += msg.value;
     }
 
-    function withdrawEventProceeds(uint256 eventId) external {
+    function withdrawEventProceeds(string memory eventId) external {
         Event storage evt = events[eventId];
         require(msg.sender == evt.creator, "Not event owner");
 
@@ -191,7 +193,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         eventProceeds[eventId] = 0;
         payable(msg.sender).transfer(balance);
 
-        emit EventProceedsWithdrawn(eventId, msg.sender, balance); 
+        emit EventProceedsWithdrawn(eventId, msg.sender, balance);
     }
 
     function listForResale(
@@ -215,7 +217,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
 
         for (uint256 i = 0; i < ticketIds.length; i++) {
             uint256 ticketId = ticketIds[i];
-            uint256 eventId = ticketMetadata[ticketId].eventId;
+            string memory eventId = ticketMetadata[ticketId].eventId;
 
             require(
                 block.timestamp <= events[eventId].resaleEnd,
@@ -252,7 +254,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
             require(ownerOf(ticketId) == msg.sender, "Not owner");
             require(!ticketMetadata[ticketId].isResold, "Already resold");
 
-            uint256 eventId = ticketMetadata[ticketId].eventId;
+            string memory eventId = ticketMetadata[ticketId].eventId;
             require(
                 block.timestamp <= events[eventId].resaleEnd,
                 "Ticket has expired"
@@ -268,7 +270,7 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
     function validateTicket(
         uint256 ticketId
     ) external onlyTicketOwner(ticketId) onlyUnvalidated(ticketId) {
-        uint256 eventId = ticketMetadata[ticketId].eventId;
+        string memory eventId = ticketMetadata[ticketId].eventId;
         require(
             block.timestamp <= events[eventId].endTime,
             "Ticket has expired"
@@ -278,6 +280,12 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
 
         emit TicketValidated(ticketId);
     }
-    // ====================================================================
 
+    function getTokenURI(
+        uint256 tokenId
+    ) external view returns (string memory) {
+        require(_exists(tokenId), "Token does not exist");
+        return tokenURI(tokenId);
+    }
+    // ====================================================================
 }

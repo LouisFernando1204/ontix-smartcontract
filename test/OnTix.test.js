@@ -12,8 +12,7 @@ describe("OnTix Smart Contract", function () {
         const oneDay = 24 * 60 * 60;
         const tokenURIs = ["ipfs://uri1", "ipfs://uri2", "ipfs://uri3", "ipfs://uri4", "ipfs://uri5", "ipfs://uri6", "ipfs://uri7", "ipfs://uri8", "ipfs://uri9", "ipfs://uri10", "ipfs://uri11", "ipfs://uri12"];
         await onTix.createEvent(
-            "Concert",
-            "Jakarta",
+            "6826c239684f0b1697254b00",
             now + 2 * oneDay,
             now + 3 * oneDay,
             ethers.parseEther("1"),
@@ -35,8 +34,7 @@ describe("OnTix Smart Contract", function () {
             const { onTix, now, owner } = await loadFixture(deployFixture);
             await expect(
                 onTix.createEvent(
-                    "Concert",
-                    "Jakarta",
+                    "6826c239684f0b1697254b10",
                     now + 2000,
                     now + 3000,
                     ethers.parseEther("1"),
@@ -47,14 +45,13 @@ describe("OnTix Smart Contract", function () {
                     ["ipfs://uri"]
                 )
             ).to.emit(onTix, "EventCreated")
-                .withArgs(1, owner.address);
+                .withArgs("6826c239684f0b1697254b10", owner.address);
         });
         it("should revert if event start time is more than event end time", async function () {
             const { onTix, now } = await loadFixture(deployFixture);
             await expect(
                 onTix.createEvent(
-                    "Concert",
-                    "Jakarta",
+                    "6826c239684f0b1697254b10",
                     now + 3000,
                     now + 2000,
                     ethers.parseEther("1"),
@@ -70,8 +67,7 @@ describe("OnTix Smart Contract", function () {
             const { onTix, now } = await loadFixture(deployFixture);
             await expect(
                 onTix.createEvent(
-                    "Concert",
-                    "Jakarta",
+                    "6826c239684f0b1697254b10",
                     now + 2000,
                     now + 3000,
                     ethers.parseEther("1"),
@@ -87,8 +83,7 @@ describe("OnTix Smart Contract", function () {
             const { onTix, now } = await loadFixture(deployFixture);
             await expect(
                 onTix.createEvent(
-                    "Concert",
-                    "Jakarta",
+                    "6826c239684f0b1697254b10",
                     now + 2000,
                     now + 3000,
                     ethers.parseEther("2"),
@@ -104,8 +99,7 @@ describe("OnTix Smart Contract", function () {
             const { onTix, now } = await loadFixture(deployFixture);
             await expect(
                 onTix.createEvent(
-                    "Concert",
-                    "Jakarta",
+                    "6826c239684f0b1697254b10",
                     now + 2000,
                     now + 3000,
                     ethers.parseEther("1"),
@@ -121,8 +115,7 @@ describe("OnTix Smart Contract", function () {
             const { onTix, now } = await loadFixture(deployFixture);
             await expect(
                 onTix.createEvent(
-                    "Concert",
-                    "Jakarta",
+                    "6826c239684f0b1697254b10",
                     now + 2000,
                     now + 3000,
                     ethers.parseEther("1"),
@@ -139,18 +132,18 @@ describe("OnTix Smart Contract", function () {
     describe("buyTickets()", function () {
         it("should allow buyer to buy tickets successfully", async function () {
             const { onTix, addr1 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 2, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 2, {
                 value: ethers.parseEther("2")
             });
-            const eventData = await onTix.events(0);
+            const eventData = await onTix.events("6826c239684f0b1697254b00");
             expect(eventData.ticketsSold).to.equal(2);
-            const eventBalance = await onTix.eventProceeds(0);
+            const eventBalance = await onTix.eventProceeds("6826c239684f0b1697254b00");
             expect(await eventBalance).to.equal(ethers.parseEther("2"));
         });
         it("should emit TicketPurchased success event", async function () {
             const { onTix, addr1 } = await loadFixture(deployFixture);
             await expect(
-                onTix.connect(addr1).buyTickets(0, 2, {
+                onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 2, {
                     value: ethers.parseEther("2")
                 })
             ).to.emit(onTix, "TicketPurchased").withArgs(0, addr1.address)
@@ -161,7 +154,7 @@ describe("OnTix Smart Contract", function () {
             await ethers.provider.send("evm_setNextBlockTimestamp", [now + 4 * oneDay]);
             await ethers.provider.send("evm_mine");
             await expect(
-                onTix.connect(addr1).buyTickets(0, 2, {
+                onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 2, {
                     value: ethers.parseEther("2"),
                 })
             ).to.be.revertedWith("Ticket sales period ended");
@@ -169,7 +162,7 @@ describe("OnTix Smart Contract", function () {
         it("should revert if not enough ticket to buy anymore", async function () {
             const { onTix, addr1 } = await loadFixture(deployFixture);
             await expect(
-                onTix.connect(addr1).buyTickets(0, 20, {
+                onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 20, {
                     value: ethers.parseEther("20"),
                 })
             ).to.be.revertedWith("Not enough tickets");
@@ -177,7 +170,7 @@ describe("OnTix Smart Contract", function () {
         it("should revert if not enough ETH sent", async function () {
             const { onTix, addr1 } = await loadFixture(deployFixture);
             await expect(
-                onTix.connect(addr1).buyTickets(0, 1, {
+                onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                     value: ethers.parseEther("0.5"),
                 })
             ).to.be.revertedWith("Incorrect ETH amount");
@@ -187,30 +180,30 @@ describe("OnTix Smart Contract", function () {
     describe("withdrawEventProceeds()", function () {
         it("should allow event creator to withdraw proceeds successfully", async function () {
             const { onTix, owner, addr1 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
-            await expect(onTix.connect(owner).withdrawEventProceeds(0)).to.changeEtherBalance(owner, ethers.parseEther("1"));
+            await expect(onTix.connect(owner).withdrawEventProceeds("6826c239684f0b1697254b00")).to.changeEtherBalance(owner, ethers.parseEther("1"));
         });
         it("should emit EventProceedsWithdrawn after successful withdrawal", async function () {
             const { onTix, addr1, owner } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
-            await expect(onTix.connect(owner).withdrawEventProceeds(0))
+            await expect(onTix.connect(owner).withdrawEventProceeds("6826c239684f0b1697254b00"))
                 .to.emit(onTix, "EventProceedsWithdrawn")
-                .withArgs(0, owner.address, ethers.parseEther("1"));
+                .withArgs("6826c239684f0b1697254b00", owner.address, ethers.parseEther("1"));
         });
         it("should revert if non-creator tries to withdraw", async function () {
             const { onTix, addr1 } = await loadFixture(deployFixture);
             await expect(
-                onTix.connect(addr1).withdrawEventProceeds(0)
+                onTix.connect(addr1).withdrawEventProceeds("6826c239684f0b1697254b00")
             ).to.be.revertedWith("Not event owner");
         });
         it("should revert if non-creator tries to withdraw", async function () {
             const { onTix, owner } = await loadFixture(deployFixture);
             await expect(
-                onTix.connect(owner).withdrawEventProceeds(0)
+                onTix.connect(owner).withdrawEventProceeds("6826c239684f0b1697254b00")
             ).to.be.revertedWith("No funds to withdraw");
         });
     });
@@ -218,7 +211,7 @@ describe("OnTix Smart Contract", function () {
     describe("listForResale()", function () {
         it("should allow ticket owner to list for resale successfully", async function () {
             const { onTix, addr1, now } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).listForResale(0, ethers.parseEther("1.5"));
@@ -227,7 +220,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should emit TicketListedForResale success event", async function () {
             const { onTix, addr1, now } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await expect(
@@ -236,7 +229,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if sender is not the ticket owner", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await expect(
@@ -245,7 +238,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if ticket is already resold", async function () {
             const { onTix, addr1, addr2, now } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).listForResale(0, ethers.parseEther("1.5"));
@@ -258,7 +251,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if outside of resale period", async function () {
             const { onTix, addr1, now, oneDay } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await ethers.provider.send("evm_setNextBlockTimestamp", [now + 4 * oneDay]);
@@ -269,7 +262,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if resale price exceeds cap", async function () {
             const { onTix, addr1, now } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await expect(
@@ -281,7 +274,7 @@ describe("OnTix Smart Contract", function () {
     describe("buyResaleTickets()", function () {
         it("should allow buyer to purchase resale ticket successfully", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).listForResale(0, ethers.parseEther("1.5"));
@@ -292,7 +285,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should emit TicketResold success event", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).listForResale(0, ethers.parseEther("1.5"));
@@ -305,7 +298,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if ticket expired", async function () {
             const { onTix, addr1, addr2, now, oneDay } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).listForResale(0, ethers.parseEther("1.5"));
@@ -319,7 +312,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if ticket is not listed", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await expect(
@@ -330,7 +323,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if ticket already resold", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).listForResale(0, ethers.parseEther("1"));
@@ -345,7 +338,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if msg.value is not equal to total resale price", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).listForResale(0, ethers.parseEther("1.5"));
@@ -360,7 +353,7 @@ describe("OnTix Smart Contract", function () {
     describe("transferTickets()", function () {
         it("should allow ticket owner to transfer a ticket successfully", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).transferTickets(addr2.address, [0]);
@@ -368,7 +361,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should emit TicketTransferred success event", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await expect(
@@ -378,7 +371,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if sender is not the ticket owner", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await expect(
@@ -387,7 +380,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if ticket has already been resold", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).listForResale(0, ethers.parseEther("1"));
@@ -400,7 +393,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if ticket expired", async function () {
             const { onTix, addr1, addr2, now, oneDay } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await ethers.provider.send("evm_setNextBlockTimestamp", [now + 4 * oneDay]);
@@ -414,7 +407,7 @@ describe("OnTix Smart Contract", function () {
     describe("validateTicket()", function () {
         it("should allow ticket owner to validate ticket successfully", async function () {
             const { onTix, addr1 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).validateTicket(0);
@@ -423,7 +416,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should emit TicketValidated success event", async function () {
             const { onTix, addr1 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await expect(
@@ -432,7 +425,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if sender is not the ticket owner", async function () {
             const { onTix, addr1, addr2 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await expect(
@@ -441,7 +434,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if ticket already used", async function () {
             const { onTix, addr1 } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await onTix.connect(addr1).validateTicket(0);
@@ -451,7 +444,7 @@ describe("OnTix Smart Contract", function () {
         });
         it("should revert if ticket expired", async function () {
             const { onTix, addr1, now, oneDay } = await loadFixture(deployFixture);
-            await onTix.connect(addr1).buyTickets(0, 1, {
+            await onTix.connect(addr1).buyTickets("6826c239684f0b1697254b00", 1, {
                 value: ethers.parseEther("1"),
             });
             await ethers.provider.send("evm_setNextBlockTimestamp", [now + 4 * oneDay]);
@@ -459,6 +452,18 @@ describe("OnTix Smart Contract", function () {
             await expect(
                 onTix.connect(addr1).validateTicket(0)
             ).to.be.revertedWith("Ticket has expired");
+        });
+    });
+
+    describe("getTokenUri()", function () {
+        it("should return correct token URI for existing token", async function () {
+            const { onTix } = await loadFixture(deployFixture);
+            const uri = await onTix.getTokenURI(0);
+            expect(uri).to.equal("ipfs://uri1");
+        });
+        it("should revert if token does not exist", async function () {
+            const { onTix } = await loadFixture(deployFixture);
+            await expect(onTix.getTokenURI(999)).to.be.revertedWith("Token does not exist");
         });
     });
 });
