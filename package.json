@@ -11,9 +11,11 @@
   "description": "This is a Smart Contract for OnTix",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.14",
     "hardhat": "^2.24.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.3"
+    "@openzeppelin/contracts": "^4.9.3",
+    "dotenv": "^16.5.0"
   }
 }

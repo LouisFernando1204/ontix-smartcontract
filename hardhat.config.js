@@ -1,4 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@nomicfoundation/hardhat-verify");
+require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -11,5 +13,14 @@ module.exports = {
       },
       viaIR: true,
     }
+  },
+  etherscan: {
+    apiKey: `${process.env.ETHERSCAN_API_KEY}`
+  },
+  networks: {
+    holesky: {
+      url: "https://ethereum-holesky-rpc.publicnode.com",
+      accounts: [process.env.HOLESKY_PRIVATE_KEY]
+    },
   }
 };
