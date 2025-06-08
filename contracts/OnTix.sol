@@ -43,10 +43,10 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
     // ====================================================================
 
     // ============================= Events ===============================
-    event EventCreated(string indexed eventId, address indexed creator);
+    event EventCreated(string eventId, address indexed creator);
     event TicketPurchased(uint256 indexed ticketId, address indexed buyer);
     event EventProceedsWithdrawn(
-        string indexed eventId,
+        string eventId,
         address indexed creator,
         uint256 amount
     );
