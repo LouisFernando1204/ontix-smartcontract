@@ -6,16 +6,16 @@ import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
-    // ========================= Constructor ==============================
+    // ========================= Constructor ===============================
     constructor() ERC721("OnTix", "OTX") {}
-    // ====================================================================
+    // =====================================================================
 
-    // ======================== Global Variables ==========================
+    // ======================== Global Variables ===========================
     uint256 public nextEventId;
     uint256 public nextTicketId;
-    // ====================================================================
+    // =====================================================================
 
-    // ============================= Structs ==============================
+    // ============================= Structs ===============================
     struct Event {
         uint256 startTime;
         uint256 endTime;
@@ -32,17 +32,17 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         bool isUsed;
         bool isResold;
     }
-    // =====================================================================
+    // ======================================================================
 
-    // ============================= Mappings ==============================
+    // ============================= Mappings ===============================
     mapping(string => Event) public events;
     mapping(uint256 => TicketData) public ticketMetadata;
     mapping(uint256 => uint256) public resalePrice;
     mapping(uint256 => address) public resaleSeller;
     mapping(string => uint256) public eventProceeds;
-    // =====================================================================
+    // ======================================================================
 
-    // ============================= Events ================================
+    // ============================= Events =================================
     event EventCreated(string eventId, address indexed creator);
     event TicketPurchased(uint256 indexed ticketId, address indexed buyer);
     event EventProceedsWithdrawn(
@@ -54,9 +54,9 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
     event TicketResold(uint256 indexed ticketId, address from, address to);
     event TicketValidated(uint256 indexed ticketId);
     event TicketTransferred(uint256 indexed ticketId, address from, address to);
-    // =====================================================================
+    // ======================================================================
 
-    // ============================= Modifiers =============================
+    // ============================= Modifiers ==============================
     modifier onlyTicketOwner(uint256 ticketId) {
         require(ownerOf(ticketId) == msg.sender, "Not ticket owner");
         _;
@@ -99,9 +99,9 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         require(uris.length == expected, "TokenURIs must match maxTickets");
         _;
     }
-    // =====================================================================
+    // ======================================================================
 
-    // ============================= Functions =============================
+    // ============================= Functions ==============================
     function createEvent(
         string memory id,
         uint256 startTime,
@@ -287,5 +287,5 @@ contract OnTix is ERC721URIStorage, ERC721Holder, Ownable {
         require(_exists(tokenId), "Token does not exist");
         return tokenURI(tokenId);
     }
-    // =====================================================================
+    // ======================================================================
 }
