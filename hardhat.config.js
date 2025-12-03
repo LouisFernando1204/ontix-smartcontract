@@ -14,6 +14,11 @@ module.exports = {
     }
   },
   networks: {
+    sepolia: {
+      url: `https://ethereum-sepolia-rpc.publicnode.com`,
+      accounts: [process.env.PRIVATE_KEY],
+      chainId: 11155111
+    },
     // holesky: {
     //   url: `https://ethereum-holesky.publicnode.com`,
     //   accounts: [process.env.PRIVATE_KEY],
